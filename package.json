@@ -1,0 +1,16 @@
+{
+  "id": "rtr.ninjasphere.limitlessled",
+  "name": "limitlessled",
+  "version": "0.0.1",
+  "description": "Ninja Sphere - Limitlessled driver",
+  "main": "Limitlessled",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "RTR <k.teza1@gmail.com>",
+  "license": "MIT",
+  "topics": {},
+  "maxMemory": 10
+}
+
+
