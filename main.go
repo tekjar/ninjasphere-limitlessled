@@ -2,15 +2,12 @@ package main
 
 import (
 	"fmt"
+	"github.com/ninjasphere/go-ninja/support"
 	"os"
 	"os/signal"
 )
 
 func main() {
 	NewLimitlessLedDriver()
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, os.Kill)
-	// Block until a signal is received.
-	s := <-c
-	fmt.Println("Got signal:", s)
+	support.WaitUntilSignal()
 }
