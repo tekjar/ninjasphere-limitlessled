@@ -3,11 +3,10 @@ package core
 import
 
 // For outputting stuff
-(
-	"fmt"
-	"net"
-	"time"
-) // For networking stuff
+
+"net"
+
+// For networking stuff
 // For exiting
 // For reversing strings
 
@@ -30,30 +29,4 @@ var (
 type Bridge struct {
 	*net.UDPConn        //extending bridge capabilities
 	ip           string // The name of the bridge
-}
-
-func Dial(host string) (*Bridge, error) {
-	addr, err := net.ResolveUDPAddr("udp4", host)
-
-	if err != nil {
-		fmt.Println("Error Resolving")
-		return nil, err
-	}
-
-	s, err := net.DialUDP("udp4", nil, addr)
-	if err != nil {
-		fmt.Println("Error dialing")
-		return nil, err
-	}
-	return &Bridge{s, host}, err
-}
-
-func (bridge *Bridge) SendCommand(command []byte) {
-	fmt.Println("Sending command")
-	_, err := bridge.Write(command)
-	if err != nil {
-		fmt.Println("Error writing")
-		return
-	}
-	time.Sleep(time.Millisecond * 100)
 }
