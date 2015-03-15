@@ -2,128 +2,117 @@ package main
 
 import (
 	"fmt"
-	"github.com/kteza1/ninjasphere-limitlessled/core"
-	"github.com/ninjasphere/go-ninja/api"
-	"github.com/ninjasphere/go-ninja/support"
 	"log"
-	"time"
+
+	"github.com/ninjasphere/go-ninja/api"
+	"github.com/ninjasphere/go-ninja/events"
+	"github.com/ninjasphere/go-ninja/support"
 )
 
 var info = ninja.LoadModuleInfo("./package.json")
-var ready = false
 
+/*LimitlessLedDriver --> Struct for LimitlessLed driver.*/
 type LimitlessLedDriver struct {
 	support.DriverSupport
 	config *LimitlessLedDriverConfig
 }
+
+/*LimitlessLedDriverConfig --> Struct for LimitlessLed driver configuration.*/
 type LimitlessLedDriverConfig struct {
-	Initialised   bool
-	NumberOfZones int
+	Initialised     bool
+	NumberOfBridges int
 }
 
-func defaultConfig() *OrviboDriverConfig {
-	return &OrviboDriverConfig{
-		Initialised:   false,
-		NumberOfZones: 4,
+func defaultConfig() *LimitlessLedDriverConfig {
+	return &LimitlessLedDriverConfig{
+		Initialised:     false,
+		NumberOfBridges: 1,
 	}
 }
-func NewDriver() (*LimitlessLedDriver, error) {
+
+/*NewLimitlessLedDriver --> initializes a new LimitlessLed Driver.*/
+func NewLimitlessLedDriver() (*LimitlessLedDriver, error) {
 	driver := &LimitlessLedDriver{}
 	err := driver.Init(info)
 	if err != nil {
 		log.Fatalf("Failed to initialize Orvibo driver: %s", err)
 	}
+	//exposes the driver to ninja sphere framework
 	err = driver.Export(driver)
 	if err != nil {
-		log.Fatalf("Failed to export Orvibo driver: %s", err)
-		allone.Close()
+		log.Fatalf("Failed to export LimitlessLed driver: %s", err)
 	}
 	return driver, nil
 }
 
-/* Driver will see core's Events channel to perform actions */
+/*OnPairingRequest --> */
+func (d *LimitlessLedDriver) OnPairingRequest(pairingRequest *events.PairingRequest, values map[string]string) bool {
+	log.Printf("RTR. Pairing request received from %s for %d seconds", values["deviceId"], pairingRequest.Duration)
+	return true
+}
+
+/*Start -->  */
 func (d *LimitlessLedDriver) Start(config *LimitlessLedDriverConfig) error {
 	log.Printf("Driver Starting with config %v", config)
+	bridgeIps := [4]string{"192.168.0.100:8899", "192.168.0.101:8899", "192.168.0.102:8899", "192.168.0.103:8899"}
 	d.config = config
 	if !d.config.Initialised {
 		d.config = defaultConfig()
 	}
-	var firstDiscover, firstSubscribe, firstQuery, autoDiscover, resubscribe chan bool
-	var device *OrviboSocket
-	d.SendEvent("config", config)
-	go func() {
-		device = NewOrviboSocket(d, msg.SocketInfo)
-		device.Socket.Name = msg.Name
-		err := d.Conn.ExportDevice(device)
-		err = d.Conn.ExportChannel(device, device.onOffChannel, "on-off")
-		if err != nil {
-			log.Fatalf("Failed to export Orvibo socket on off channel %s: %s", msg.SocketInfo.MACAddress, err)
-			allone.Close()
-		}
-
-		allone.CheckForMessages()
-		for {
-			allone.CheckForMessages()
-			select {
-			case msg := <-allone.Events:
-				fmt.Println("!!!T Type:", msg.Name)
-				switch msg.Name {
-				case "ready":
-				case "subscribed":
-				case "queried":
-					fmt.Println("We've queried. Name is:", msg.SocketInfo.Name)
-					device = NewOrviboSocket(d, msg.SocketInfo)
-					device.Socket.Name = msg.Name
-					err := d.Conn.ExportDevice(device)
-					err = d.Conn.ExportChannel(device, device.onOffChannel, "on-off")
-					if err != nil {
-						log.Fatalf("Failed to export Orvibo socket on off channel %s: %s", msg.SocketInfo.MACAddress, err)
-						allone.Close()
-					}
-					allone.Discover()
-					allone.Subscribe()
-					allone.CheckForMessages()
-				case "statechanged":
-					fmt.Println("State changed to:", msg.SocketInfo.State)
-					allone.CheckForMessages()
-				}
+	/* Don't let it cross more than 4 for now */
+	for i := 0; i < d.config.NumberOfBridges; i++ {
+		go func() {
+			device := NewLimitlessLedBridge(d, i, bridgeIps[i])
+			_, err := device.Dial(bridgeIps[i])
+			if err != nil {
+				fmt.Println("Something wrong")
+				return
 			}
-			allone.CheckForMessages()
-		}
-	}()
+			/* If Dail is successful, expose device and channels */
+			err = d.Conn.ExportDevice(device)
+			if err != nil {
+				log.Fatalf("Failed to export the bridge %d: %s", i, err)
+			}
+			/* Each bridge is configured with 4 zones. zone = on-off channel coz control is through
+			zones. But a zone can have multiple lights configured */
+			err = d.Conn.ExportChannel(device, device.onOffChannel1, "on-off")
+			if err != nil {
+				log.Fatalf("Failed to export bridge's zone1 on off channel %d: %s", i, err)
+			}
+			err = d.Conn.ExportChannel(device, device.onOffChannel2, "on-off")
+			if err != nil {
+				log.Fatalf("Failed to export bridge's zone2 on off channel %d: %s", i, err)
+			}
+			err = d.Conn.ExportChannel(device, device.onOffChannel3, "on-off")
+			if err != nil {
+				log.Fatalf("Failed to export bridge's zone3 on off channel %d: %s", i, err)
+			}
+			err = d.Conn.ExportChannel(device, device.onOffChannel4, "on-off")
+			if err != nil {
+				log.Fatalf("Failed to export bridge's zone4 on off channel %d: %s", i, err)
+			}
+		}()
+	}
+
 	return d.SendEvent("config", config)
 }
-func (d *OrviboSocket) Stop() error {
-	allone.Close()
-	return fmt.Errorf("This driver does not support being stopped. YOU HAVE NO POWER HERE.")
-}
 
+//In -->
 type In struct {
 	Name string
 }
+
+//Out -->
 type Out struct {
 	Age  int
 	Name string
 }
 
-func (d *OrviboDriver) Blarg(in *In) (*Out, error) {
+//Blarg -->
+func (d *LimitlessLedDriver) Blarg(in *In) (*Out, error) {
 	log.Printf("GOT INCOMING! %s", in.Name)
 	return &Out{
 		Name: in.Name,
 		Age:  30,
 	}, nil
-}
-func setInterval(what func(), delay time.Duration) chan bool {
-	stop := make(chan bool)
-	go func() {
-		for {
-			what()
-			select {
-			case <-time.After(delay):
-			case <-stop:
-				return
-			}
-		}
-	}()
-	return stop
 }

@@ -2,12 +2,17 @@ package main
 
 import (
 	"fmt"
+	"log"
+
 	"github.com/ninjasphere/go-ninja/support"
-	"os"
-	"os/signal"
 )
 
 func main() {
-	NewLimitlessLedDriver()
+	fmt.Println("RTR. NinjaSphere LimitlessLed driver")
+	_, err := NewLimitlessLedDriver()
+	if err != nil {
+		log.Fatalf("Failed to create fake driver: %s", err)
+	}
+
 	support.WaitUntilSignal()
 }
