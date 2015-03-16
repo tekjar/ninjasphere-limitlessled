@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kteza1/ninjasphere-limitlessled/core"
 	"github.com/ninjasphere/go-ninja/api"
 	"github.com/ninjasphere/go-ninja/channels"
 	"github.com/ninjasphere/go-ninja/model"
@@ -43,7 +44,8 @@ func NewLimitlessLedBridge(driver ninja.Driver, id int, ipPort string) *Limitles
 				"ninja:thingType":    "light",
 			},
 		},
-		ipPort: ipPort,
+		ipPort:      ipPort,
+		currentZone: 1,
 	}
 	bridge.onOffChannel1 = channels.NewOnOffChannel(bridge)
 	bridge.onOffChannel2 = channels.NewOnOffChannel(bridge)
@@ -69,8 +71,12 @@ func (l *LimitlessLedBridge) SetOnOff(state bool) error {
 	case 1:
 		if state == true {
 			fmt.Println("Switch on zone1")
+			fmt.Println(l.ipPort, l.conn)
+			l.SendCommand(core.ALL_ON)
 		} else {
 			fmt.Println("Switching off zone1")
+			fmt.Println(l.ipPort, l.conn)
+			l.SendCommand(core.ALL_OFF)
 		}
 	case 2:
 		if state == true {
