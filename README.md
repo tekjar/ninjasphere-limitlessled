@@ -2,12 +2,12 @@
 Limitlessled driver for NinjaSphere
 
 
-**How to install birany:**
+**How to start the driver **
 
-1. setup golang environment in your machine
+1. Download the source and do **'make target'**. This will generate **'driver-limitlessled'** folder
 
-2. Before creating the binary make sure that limitlessled bridge and your machine are on same n/w. Bridge ip is hardcoded in 'main.go'. Check your bridge ip and change it
+2. Make sure these directories are available --> **/data/sphere/user-autostart/{drivers,apps}**. If not --> **sudo mkdir -p /data/sphere/user-autostart/{drivers,apps} && sudo chown -R ninja.ninja /data/sphere**
 
-3. cd to 'limitlessled_testapp' folder and 'go install'. This will create a binary called 'limitlessled_testapp'
+3. **scp -r driver-limitlessled ninjasphere.local:/data/sphere/user-autostart/drivers**
 
-**e.g limitlessled_testapp all_on or limitlessled_testapp all_off**
+4. reboot the sphere or ssh into sphere & cd into **/data/sphere/user-autostart/drivers/driver-limitlessled** folder and ** nservice driver-limitlessled start **
