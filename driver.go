@@ -27,23 +27,20 @@ type LimitlessLedDriverConfig struct {
 func defaultConfig() *LimitlessLedDriverConfig {
 	return &LimitlessLedDriverConfig{
 		Initialised:     false,
-		NumberOfBridges: 1,
+		NumberOfBridges: 1, //No. of lights ?? Does it matter ??
 	}
 }
 
 /*NewLimitlessLedDriver --> initializes a new LimitlessLed Driver.*/
 func NewLimitlessLedDriver() (*LimitlessLedDriver, error) {
-	fmt.Println("RTR. Creating new driver")
 	driver := &LimitlessLedDriver{}
 	err := driver.Init(info)
 	if err != nil {
-		fmt.Println("RTR. Couldn't init")
 		log.Fatalf("Failed to initialize LimitlessLed driver: %s", err)
 	}
 	//exposes the driver to ninja sphere framework
 	err = driver.Export(driver)
 	if err != nil {
-		fmt.Println("RTR. Couldn't export")
 		log.Fatalf("Failed to export LimitlessLed driver: %s", err)
 	}
 	return driver, nil
@@ -51,59 +48,90 @@ func NewLimitlessLedDriver() (*LimitlessLedDriver, error) {
 
 /*OnPairingRequest --> */
 func (d *LimitlessLedDriver) OnPairingRequest(pairingRequest *events.PairingRequest, values map[string]string) bool {
-	log.Printf("RTR. Pairing request received from %s for %d seconds", values["deviceId"], pairingRequest.Duration)
+	fmt.Println("RTR. Pairing request received from %s for %d seconds", values["deviceId"], pairingRequest.Duration)
 	return true
 }
 
 /*Start -->  */
 func (d *LimitlessLedDriver) Start(config *LimitlessLedDriverConfig) error {
 	log.Printf("Driver Starting with config %v", config)
-	fmt.Println("RTR. Start")
 	bridgeIps := [4]string{"192.168.0.100:8899", "192.168.0.101:8899", "192.168.0.102:8899", "192.168.0.103:8899"}
 	d.config = config
 	if !d.config.Initialised {
 		d.config = defaultConfig()
 	}
+	var id int = 20091988
 	/* Don't let it cross more than 4 for now */
 	for i := 0; i < d.config.NumberOfBridges; i++ {
-		//	go func() {
-		fmt.Println("Creating connection to %s", bridgeIps[i])
-		device := NewLimitlessLedBridge(d, i, bridgeIps[i])
-		bridge, err := device.Dial(bridgeIps[i])
+		fmt.Println("Creating connection to", bridgeIps[i])
+		bridge, err := Dial(bridgeIps[i])
 		if err != nil {
-			fmt.Println("Something wrong")
+			fmt.Println("Something wrong while trying to connect to bridge")
 			return err
 		}
+		/* Switch all off just for the confirmation that the bridge is connected */
 		bridge.SendCommand(core.ALL_OFF)
-		/* If Dail is successful, expose device and channels */
-		err = d.Conn.ExportDevice(device)
+
+		/* zone 1*/
+		id++
+		device1 := newLimitlessLedZone(d, id) /* A new id for each zone */
+		device1.bridge = bridge
+		device1.zoneNumber = 1
+		/* If Dail is successful, expose zones*/
+		err = d.Conn.ExportDevice(device1)
 		if err != nil {
-			fmt.Println("RTR. Export device failed")
-			log.Fatalf("Failed to export the bridge %d: %s", i, err)
+			log.Printf("Failed to export zone 1. id =  %d, err = %s", id, err)
 		}
-		/* Each bridge is configured with 4 zones. zone = on-off channel coz control is through
-		zones. But a zone can have multiple lights configured */
-		err = d.Conn.ExportChannel(device, device.onOffChannel1, "on-off")
+		err = d.Conn.ExportChannel(device1, device1.onOffChannel, "on-off")
 		if err != nil {
-			fmt.Println("RTR. Export channel failed")
-			log.Fatalf("Failed to export bridge's zone1 on off channel %d: %s", i, err)
+			log.Printf("Failed to export zone 1 on off channel. err = %s", err)
 		}
-		// err = d.Conn.ExportChannel(device, device.onOffChannel2, "on-off")
-		// if err != nil {
-		// 	fmt.Println("RTR. Export channel 2 failed")
-		// 	log.Fatalf("Failed to export bridge's zone2 on off channel %d: %s", i, err)
-		// }
-		// err = d.Conn.ExportChannel(device, device.onOffChannel3, "on-off")
-		// if err != nil {
-		// 	fmt.Println("RTR. Export channel 3 failed")
-		// 	log.Fatalf("Failed to export bridge's zone3 on off channel %d: %s", i, err)
-		// }
-		// err = d.Conn.ExportChannel(device, device.onOffChannel4, "on-off")
-		// if err != nil {
-		// 	fmt.Println("RTR. Export channel 4 failed")
-		// 	log.Fatalf("Failed to export bridge's zone4 on off channel %d: %s", i, err)
-		// }
-		//		}()
+
+		/* zone2 */
+		id++
+		device2 := newLimitlessLedZone(d, id)
+		device2.bridge = bridge
+		device2.zoneNumber = 2
+		/* If Dail is successful, expose zones*/
+		err = d.Conn.ExportDevice(device2)
+		if err != nil {
+			log.Printf("Failed to export zone 2. id =  %d, err = %s", id, err)
+		}
+		err = d.Conn.ExportChannel(device2, device2.onOffChannel, "on-off")
+		if err != nil {
+			log.Printf("Failed to export zone 2 on off channel. err = %s", err)
+		}
+
+		/* zone3 */
+		id++
+		device3 := newLimitlessLedZone(d, id)
+		device3.bridge = bridge
+		device3.zoneNumber = 3
+		/* If Dail is successful, expose zones*/
+		err = d.Conn.ExportDevice(device3)
+		if err != nil {
+			log.Printf("Failed to export zone 3. id =  %d, err = %s", id, err)
+		}
+		err = d.Conn.ExportChannel(device3, device3.onOffChannel, "on-off")
+		if err != nil {
+			log.Printf("Failed to export zone 3 on off channel. err = %s", err)
+		}
+
+		/* zone4 */
+		id++
+		device4 := newLimitlessLedZone(d, id)
+		device4.bridge = bridge
+		device4.zoneNumber = 4
+		/* If Dail is successful, expose zones*/
+		err = d.Conn.ExportDevice(device4)
+		if err != nil {
+			log.Printf("Failed to export zone 4. id =  %d, err = %s", id, err)
+		}
+		err = d.Conn.ExportChannel(device4, device4.onOffChannel, "on-off")
+		if err != nil {
+			log.Printf("Failed to export zone 4 on off channel. err = %s", err)
+		}
+
 	}
 
 	return d.SendEvent("config", config)

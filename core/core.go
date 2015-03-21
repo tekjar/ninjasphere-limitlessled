@@ -1,14 +1,6 @@
 package core
 
-import
-
 // For outputting stuff
-
-"net"
-
-// For networking stuff
-// For exiting
-// For reversing strings
 
 var (
 	ALL_ON          = []byte{0x42, 0x00, 0x55}
@@ -21,12 +13,12 @@ var (
 	COOLER          = []byte{0x3F, 0x00, 0x55}
 	ALL_ON_FULL     = []byte{0xB5, 0x00, 0x55}
 	ALL_NIGHTLIGHT  = []byte{0xB9, 0x00, 0x55}
-	ZONE2_SYNCPAIR  = []byte{0x47, 0x00, 0x55}
-	ZONE2_OFF       = []byte{0x33, 0x00, 0x55}
+	ZONE1_ON        = []byte{0x45, 0x00, 0x55}
+	ZONE1_OFF       = []byte{0x46, 0x00, 0x55}
+	ZONE2_ON        = []byte{0x47, 0x00, 0x55}
+	ZONE2_OFF       = []byte{0x48, 0x00, 0x55}
+	ZONE3_ON        = []byte{0x49, 0x00, 0x55}
+	ZONE3_OFF       = []byte{0x4A, 0x00, 0x55}
+	ZONE4_ON        = []byte{0x4B, 0x00, 0x55}
+	ZONE4_OFF       = []byte{0x4C, 0x00, 0x55}
 )
-
-//Bridge LimitlessLed bridge
-type Bridge struct {
-	*net.UDPConn        //extending bridge capabilities
-	ip           string // The name of the bridge
-}

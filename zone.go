@@ -16,85 +16,73 @@ import (
 
 /*LimitlessLedBridge Struct for info about bridge.*/
 type LimitlessLedBridge struct {
-	driver        ninja.Driver
-	info          *model.Device
-	sendEvent     func(event string, payload interface{}) error
-	onOffChannel1 *channels.OnOffChannel
-	onOffChannel2 *channels.OnOffChannel
-	onOffChannel3 *channels.OnOffChannel
-	onOffChannel4 *channels.OnOffChannel
-	ipPort        string
-	conn          *net.UDPConn
-	currentZone   int //for SetOnOff() method on the relevant channel based on current zone
+	*net.UDPConn
 }
 
-/*NewLimitlessLedBridge function initializes a new bridge. */
-func NewLimitlessLedBridge(driver ninja.Driver, id int, ipPort string) *LimitlessLedBridge {
-	name := fmt.Sprintf("LimitlessLedBridge %d", id)
-	bridge := &LimitlessLedBridge{
+type LimitlessLedZone struct {
+	driver       ninja.Driver
+	info         *model.Device
+	sendEvent    func(event string, payload interface{}) error
+	onOffChannel *channels.OnOffChannel
+	zoneNumber   int
+	bridge       *LimitlessLedBridge
+}
+
+func newLimitlessLedZone(driver ninja.Driver, id int) *LimitlessLedZone {
+	name := fmt.Sprintf("light%d", id)
+	zone := &LimitlessLedZone{
 		driver: driver,
 		info: &model.Device{
-			NaturalID:     fmt.Sprintf("socket%d", 1122334455),
-			NaturalIDType: "limitlessled bridge",
+			NaturalID:     fmt.Sprintf("light%d", id),
+			NaturalIDType: "limitlessled zone",
 			Name:          &name,
 			Signatures: &map[string]string{
 				"ninja:manufacturer": "LimitlessLed",
 				"ninja:productName":  "LimitlessLed",
-				"ninja:productType":  "bridge",
+				"ninja:productType":  "Light",
 				"ninja:thingType":    "light",
 			},
 		},
-		ipPort:      ipPort,
-		currentZone: 1,
 	}
-	bridge.onOffChannel1 = channels.NewOnOffChannel(bridge)
-	bridge.onOffChannel2 = channels.NewOnOffChannel(bridge)
-	bridge.onOffChannel3 = channels.NewOnOffChannel(bridge)
-	bridge.onOffChannel4 = channels.NewOnOffChannel(bridge)
-	return bridge
-}
-
-/*GetDeviceInfo --> Function for getting bridge info */
-func (l *LimitlessLedBridge) GetDeviceInfo() *model.Device {
-	return l.info
-}
-
-/*GetDriver -->.*/
-func (l *LimitlessLedBridge) GetDriver() ninja.Driver {
-	return l.driver
+	zone.onOffChannel = channels.NewOnOffChannel(zone)
+	return zone
 }
 
 /*SetOnOff -->*/
-func (l *LimitlessLedBridge) SetOnOff(state bool) error {
-	zone := l.currentZone
+func (l *LimitlessLedZone) SetOnOff(state bool) error {
+	zone := l.zoneNumber
 	switch zone {
 	case 1:
 		if state == true {
 			fmt.Println("Switch on zone1")
-			fmt.Println(l.ipPort, l.conn)
-			l.SendCommand(core.ALL_ON)
+			l.bridge.SendCommand(core.ZONE1_ON)
 		} else {
 			fmt.Println("Switching off zone1")
-			fmt.Println(l.ipPort, l.conn)
-			l.SendCommand(core.ALL_OFF)
+			l.bridge.SendCommand(core.ZONE1_OFF)
 		}
 	case 2:
 		if state == true {
 			fmt.Println("Switch on zone2")
+			l.bridge.SendCommand(core.ZONE2_ON)
 		} else {
 			fmt.Println("Switching off zone2")
+			l.bridge.SendCommand(core.ZONE2_OFF)
 		}
 	case 3:
 		if state == true {
 			fmt.Println("Switch on zone3")
+			l.bridge.SendCommand(core.ZONE3_ON)
 		} else {
 			fmt.Println("Switching off zone3")
+			l.bridge.SendCommand(core.ZONE3_OFF)
 		}
 	case 4:
 		if state == true {
 			fmt.Println("Switch on zone4")
+			l.bridge.SendCommand(core.ZONE4_ON)
 		} else {
 			fmt.Println("Switching off zone4")
+			l.bridge.SendCommand(core.ZONE4_OFF)
 		}
 	}
 	return nil
@@ -106,15 +94,29 @@ func (l *LimitlessLedBridge) ToggleOnOff() error {
 	return nil
 }
 
+//ToggleOnOff -->
+func (l *LimitlessLedZone) ToggleOnOff() error {
+	log.Println("Toggling")
+	return nil
+}
+
+func (l *LimitlessLedZone) GetDeviceInfo() *model.Device {
+	return l.info
+}
+
+func (l *LimitlessLedZone) GetDriver() ninja.Driver {
+	return l.driver
+}
+
 //SetEventHandler -->
-func (l *LimitlessLedBridge) SetEventHandler(sendEvent func(event string, payload interface{}) error) {
+func (l *LimitlessLedZone) SetEventHandler(sendEvent func(event string, payload interface{}) error) {
 	l.sendEvent = sendEvent
 }
 
 var reg, _ = regexp.Compile("[^a-z0-9]")
 
 //SetName --> Exported by service/device schema
-func (l *LimitlessLedBridge) SetName(name *string) (*string, error) {
+func (l *LimitlessLedZone) SetName(name *string) (*string, error) {
 	log.Printf("Setting device name to %s", *name)
 	safe := reg.ReplaceAllString(strings.ToLower(*name), "")
 	if len(safe) > 16 {
@@ -125,7 +127,7 @@ func (l *LimitlessLedBridge) SetName(name *string) (*string, error) {
 	return &safe, nil
 }
 
-func (l *LimitlessLedBridge) Dial(host string) (*LimitlessLedBridge, error) {
+func Dial(host string) (*LimitlessLedBridge, error) {
 	addr, err := net.ResolveUDPAddr("udp4", host)
 
 	if err != nil {
@@ -138,13 +140,12 @@ func (l *LimitlessLedBridge) Dial(host string) (*LimitlessLedBridge, error) {
 		fmt.Println("Error dialing")
 		return nil, err
 	}
-	l.conn = s
-	return l, err
+	return &LimitlessLedBridge{s}, err
 }
 
 func (bridge *LimitlessLedBridge) SendCommand(command []byte) {
 	fmt.Println("Sending command")
-	_, err := bridge.conn.Write(command)
+	_, err := bridge.Write(command)
 	if err != nil {
 		fmt.Println("Error writing")
 		return
