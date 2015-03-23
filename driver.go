@@ -60,7 +60,7 @@ func (d *LimitlessLedDriver) Start(config *LimitlessLedDriverConfig) error {
 	if !d.config.Initialised {
 		d.config = defaultConfig()
 	}
-	var id int = 20091988
+	var id int = 0
 	/* Don't let it cross more than 4 for now */
 	for i := 0; i < d.config.NumberOfBridges; i++ {
 		fmt.Println("Creating connection to", bridgeIps[i])

@@ -29,7 +29,7 @@ type LimitlessLedZone struct {
 }
 
 func newLimitlessLedZone(driver ninja.Driver, id int) *LimitlessLedZone {
-	name := fmt.Sprintf("light%d", id)
+	name := fmt.Sprintf("MiLight-Z%d", id)
 	zone := &LimitlessLedZone{
 		driver: driver,
 		info: &model.Device{
