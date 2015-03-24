@@ -1,0 +1,8 @@
+<Milight>
+  <Bridge inst="1" ip="192.168.0.100:8899">
+    <zone1>off</zone1>
+    <zone2>off</zone2>
+    <zone3>off</zone3>
+    <zone4>off</zone4>
+  </Bridge>
+</Milight>

@@ -1,8 +1,12 @@
 package main
 
 import (
+	"encoding/xml"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"os"
+	"time"
 
 	"github.com/kteza1/ninjasphere-limitlessled/core"
 	"github.com/ninjasphere/go-ninja/api"
@@ -22,6 +26,23 @@ type LimitlessLedDriver struct {
 type LimitlessLedDriverConfig struct {
 	Initialised     bool
 	NumberOfBridges int
+}
+
+type Milight struct {
+	XMLName xml.Name `xml:"Milight"`
+	Bridge  struct {
+		XMLName xml.Name `xml:"Bridge"`
+		IP      string   `xml:"ip,attr"`
+		Zone1   []string `xml:"zone1"`
+		Zone2   []string `xml:"zone2"`
+		Zone3   []string `xml:"zone3"`
+		Zone4   []string `xml:"zone4"`
+	}
+}
+
+type Zone struct {
+	Value string `xml:",chardata"`
+	Inst  int    `xml:"inst,attr"`
 }
 
 func defaultConfig() *LimitlessLedDriverConfig {
@@ -55,21 +76,37 @@ func (d *LimitlessLedDriver) OnPairingRequest(pairingRequest *events.PairingRequ
 /*Start -->  */
 func (d *LimitlessLedDriver) Start(config *LimitlessLedDriverConfig) error {
 	log.Printf("Driver Starting with config %v", config)
-	bridgeIps := [4]string{"192.168.0.100:8899", "192.168.0.101:8899", "192.168.0.102:8899", "192.168.0.103:8899"}
+	miXML, err := os.Open("milights.xml")
+	if err != nil {
+		fmt.Println("Error opening the file")
+		log.Fatalf("Unable to find the milight xml database")
+	}
+
+	defer miXML.Close()
+
+	miData, _ := ioutil.ReadAll(miXML)
+	var xMilight Milight
+	xml.Unmarshal(miData, &xMilight)
+	bridgeIP := xMilight.Bridge.IP
 	d.config = config
 	if !d.config.Initialised {
 		d.config = defaultConfig()
 	}
 	var id int = 0
-	/* Don't let it cross more than 4 for now */
+	/* This is 1 for now. Will be taken from config file later */
 	for i := 0; i < d.config.NumberOfBridges; i++ {
-		fmt.Println("Creating connection to", bridgeIps[i])
-		bridge, err := Dial(bridgeIps[i])
+		fmt.Println("Creating connection to", bridgeIP)
+		bridge, err := Dial(bridgeIP)
 		if err != nil {
 			fmt.Println("Something wrong while trying to connect to bridge")
 			return err
 		}
-		/* Switch all off just for the confirmation that the bridge is connected */
+		/* Blink all Lights. Confirmation that the driver is ready*/
+		time.Sleep(time.Millisecond * 150)
+		bridge.SendCommand(core.ALL_OFF)
+		time.Sleep(time.Millisecond * 150)
+		bridge.SendCommand(core.ALL_ON)
+		time.Sleep(time.Millisecond * 150)
 		bridge.SendCommand(core.ALL_OFF)
 
 		/* zone 1*/
