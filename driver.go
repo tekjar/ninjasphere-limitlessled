@@ -114,14 +114,24 @@ func (d *LimitlessLedDriver) Start(config *LimitlessLedDriverConfig) error {
 		device1 := newLimitlessLedZone(d, id) /* A new id for each zone */
 		device1.bridge = bridge
 		device1.zoneNumber = 1
-		/* If Dail is successful, expose zones*/
+		/* If Dail is successful, expose Device*/
 		err = d.Conn.ExportDevice(device1)
 		if err != nil {
 			log.Printf("Failed to export zone 1. id =  %d, err = %s", id, err)
 		}
+		/* Start exporting channels for this device */
 		err = d.Conn.ExportChannel(device1, device1.onOffChannel, "on-off")
 		if err != nil {
 			log.Printf("Failed to export zone 1 on off channel. err = %s", err)
+		}
+
+		err = d.Conn.ExportChannel(device1, device1.brightnessChannel, "brightness")
+		if err != nil {
+			log.Fatalf("Failed to export fake light brightness channel %d: %s", i, err)
+		}
+		err = d.Conn.ExportChannel(device1, device1.colorChannel, "color")
+		if err != nil {
+			log.Fatalf("Failed to export fake color channel %d: %s", i, err)
 		}
 
 		/* zone2 */
@@ -134,9 +144,18 @@ func (d *LimitlessLedDriver) Start(config *LimitlessLedDriverConfig) error {
 		if err != nil {
 			log.Printf("Failed to export zone 2. id =  %d, err = %s", id, err)
 		}
+		/* Export channels */
 		err = d.Conn.ExportChannel(device2, device2.onOffChannel, "on-off")
 		if err != nil {
 			log.Printf("Failed to export zone 2 on off channel. err = %s", err)
+		}
+		err = d.Conn.ExportChannel(device2, device2.brightnessChannel, "brightness")
+		if err != nil {
+			log.Fatalf("Failed to export fake light brightness channel %d: %s", i, err)
+		}
+		err = d.Conn.ExportChannel(device2, device2.colorChannel, "color")
+		if err != nil {
+			log.Fatalf("Failed to export fake color channel %d: %s", i, err)
 		}
 
 		/* zone3 */
@@ -153,6 +172,14 @@ func (d *LimitlessLedDriver) Start(config *LimitlessLedDriverConfig) error {
 		if err != nil {
 			log.Printf("Failed to export zone 3 on off channel. err = %s", err)
 		}
+		err = d.Conn.ExportChannel(device3, device3.brightnessChannel, "brightness")
+		if err != nil {
+			log.Fatalf("Failed to export fake light brightness channel %d: %s", i, err)
+		}
+		err = d.Conn.ExportChannel(device3, device3.colorChannel, "color")
+		if err != nil {
+			log.Fatalf("Failed to export fake color channel %d: %s", i, err)
+		}
 
 		/* zone4 */
 		id++
@@ -167,6 +194,14 @@ func (d *LimitlessLedDriver) Start(config *LimitlessLedDriverConfig) error {
 		err = d.Conn.ExportChannel(device4, device4.onOffChannel, "on-off")
 		if err != nil {
 			log.Printf("Failed to export zone 4 on off channel. err = %s", err)
+		}
+		err = d.Conn.ExportChannel(device4, device4.brightnessChannel, "brightness")
+		if err != nil {
+			log.Fatalf("Failed to export fake light brightness channel %d: %s", i, err)
+		}
+		err = d.Conn.ExportChannel(device4, device4.colorChannel, "color")
+		if err != nil {
+			log.Fatalf("Failed to export fake color channel %d: %s", i, err)
 		}
 
 	}

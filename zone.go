@@ -20,12 +20,14 @@ type LimitlessLedBridge struct {
 }
 
 type LimitlessLedZone struct {
-	driver       ninja.Driver
-	info         *model.Device
-	sendEvent    func(event string, payload interface{}) error
-	onOffChannel *channels.OnOffChannel
-	zoneNumber   int
-	bridge       *LimitlessLedBridge
+	driver            ninja.Driver
+	info              *model.Device
+	sendEvent         func(event string, payload interface{}) error
+	onOffChannel      *channels.OnOffChannel
+	brightnessChannel *channels.BrightnessChannel
+	colorChannel      *channels.ColorChannel
+	zoneNumber        int
+	bridge            *LimitlessLedBridge
 }
 
 func newLimitlessLedZone(driver ninja.Driver, id int) *LimitlessLedZone {
@@ -45,6 +47,8 @@ func newLimitlessLedZone(driver ninja.Driver, id int) *LimitlessLedZone {
 		},
 	}
 	zone.onOffChannel = channels.NewOnOffChannel(zone)
+	zone.brightnessChannel = channels.NewBrightnessChannel(zone)
+	zone.colorChannel = channels.NewColorChannel(zone)
 	return zone
 }
 
@@ -97,6 +101,16 @@ func (l *LimitlessLedBridge) ToggleOnOff() error {
 //ToggleOnOff -->
 func (l *LimitlessLedZone) ToggleOnOff() error {
 	log.Println("Toggling")
+	return nil
+}
+
+func (l *LimitlessLedZone) SetColor(state *channels.ColorState) error {
+	fmt.Println("setting color state to %v", state)
+	return nil
+}
+
+func (l *LimitlessLedZone) SetBrightness(state float64) error {
+	fmt.Println("setting brightness to %f", state)
 	return nil
 }
 
