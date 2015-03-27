@@ -145,10 +145,14 @@ func Dial(host string) (*LimitlessLedBridge, error) {
 
 func (bridge *LimitlessLedBridge) SendCommand(command []byte) {
 	fmt.Println("Sending command")
-	_, err := bridge.Write(command)
-	if err != nil {
-		fmt.Println("Error writing")
-		return
+	/* Sending each command twice since bridge can get slow sometimes */
+	for i := 0; i < 2; i++ {
+		_, err := bridge.Write(command)
+		if err != nil {
+			fmt.Println("Error writing")
+			return
+		}
+		time.Sleep(time.Millisecond * 50)
 	}
 	time.Sleep(time.Millisecond * 100)
 }
