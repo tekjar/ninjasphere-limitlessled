@@ -93,12 +93,6 @@ func (l *LimitlessLedZone) SetOnOff(state bool) error {
 }
 
 //ToggleOnOff -->
-func (l *LimitlessLedBridge) ToggleOnOff() error {
-	log.Println("Toggling")
-	return nil
-}
-
-//ToggleOnOff -->
 func (l *LimitlessLedZone) ToggleOnOff() error {
 	log.Println("Toggling")
 	return nil
