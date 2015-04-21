@@ -104,7 +104,32 @@ func (l *LimitlessLedZone) SetColor(state *channels.ColorState) error {
 }
 
 func (l *LimitlessLedZone) SetBrightness(state float64) error {
-	fmt.Println("setting brightness to %f", state)
+	var brightness uint32 = (uint32)(state * 100)
+	/* math to scale the range to [0, 27] */
+	/* ref --> http://stackoverflow.com/questions/5294955/how-to-scale-down-a-range-of-numbers-with-a-known-min-and-max-value */
+	brightness_byte := (byte)((27-0)*(brightness-0)/(100-0) + 0)
+	c1 := byte(0x4E)
+	c3 := byte(0x55)
+
+	command := []byte{c1, brightness_byte, c3}
+
+	zone := l.zoneNumber
+	switch zone {
+	case 1:
+		l.bridge.SendCommand(core.ZONE1_ON)
+		l.bridge.SendCommand(command)
+	case 2:
+		l.bridge.SendCommand(core.ZONE2_ON)
+		l.bridge.SendCommand(command)
+	case 3:
+		l.bridge.SendCommand(core.ZONE3_ON)
+		l.bridge.SendCommand(command)
+	case 4:
+		l.bridge.SendCommand(core.ZONE4_ON)
+		l.bridge.SendCommand(command)
+	}
+
+	fmt.Printf("setting zone %d brightness to %d\n", zone, brightness)
 	return nil
 }
 
@@ -160,7 +185,7 @@ func (bridge *LimitlessLedBridge) SendCommand(command []byte) {
 			fmt.Println("Error writing")
 			return
 		}
-		time.Sleep(time.Millisecond * 50)
+		time.Sleep(time.Millisecond * 100)
 	}
-	time.Sleep(time.Millisecond * 100)
+	time.Sleep(time.Millisecond * 150)
 }
